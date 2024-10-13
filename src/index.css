@@ -1,20 +1,57 @@
-h1 {
-  color: green;
-  font-style: italic;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.note {
-  color: grey;
-  padding-top: 3px;
-  font-size: 15px;
-}
 
-.error {
-  color: red;
-  background: lightgrey;
-  font-size: 20px;
-  border-style: solid;
-  border-radius: 5px;
-  padding: 10px;
-  margin-bottom: 10px;
+/* This is Global CSS */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+* {
+	margin: 0;
+	padding: 0;
+}
+html,
+body {
+	height: 100%;
+	/* if you want 1rem = 10px, easier for calculations */
+	/* font-size: 62.5%; */
+	/* font-size: 62.5%; */
+}
+body {
+	/* line-height: 1.5; */
+	-webkit-font-smoothing: antialiased;
+	font-family: 'Inter', sans-serif;
+	/* background-color: #f8f8fc; */
+	color: #111827;
+}
+img,
+picture,
+video,
+canvas,
+svg {
+	display: block;
+	max-width: 100%;
+}
+input,
+button,
+textarea,
+select {
+	font: inherit;
+	outline: none;
+}
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	overflow-wrap: break-word;
+}
+#root,
+#__next {
+	isolation: isolate;
 }

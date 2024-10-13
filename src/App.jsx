@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import Note from "./components/Note";
 import Notification from "./components/Notification";
-import Footer from "./components/Footer";
 import noteService from "./services/notes";
 import loginService from "./services/login";
 import LoginForm from "./components/LoginForm";
 import NoteForm from "./components/NoteForm";
-import Togglable from "./components/Togglable";
+// import Togglable from "./components/Togglable";
+import Sidebar from "./components/Sidebar";
+import Navbar from "./components/Navbar";
 
 const App = () => {
 	const [notes, setNotes] = useState([]);
@@ -16,7 +17,11 @@ const App = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [user, setUser] = useState(null);
-	const [loginVisible, setLoginVisible] = useState(false);
+	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+	const toggleSidebar = () => {
+		setIsSidebarOpen(!isSidebarOpen);
+	};
 
 	useEffect(() => {
 		noteService.getAll().then((initialNotes) => {
@@ -38,6 +43,38 @@ const App = () => {
 			setNotes(notes.concat(returnedNote));
 			setNewNote("");
 		});
+	};
+
+	const deleteNote = (id) => {
+		// console.log("delete note", id);
+		noteService
+			.remove(id)
+			.then(() => {
+				setNotes(notes.filter((note) => note.id !== id));
+			})
+			.catch((error) => {
+				setErrorMessage(`Note '${id}' was already removed from the server`);
+				setTimeout(() => setErrorMessage(null), 5000);
+			});
+	};
+	// Add this function inside your App component
+	const updateNote = (id, newContent) => {
+		const note = notes.find((n) => n.id === id);
+		const changedNote = { ...note, content: newContent };
+
+		noteService
+			.update(id, changedNote)
+			.then((returnedNote) => {
+				setNotes(notes.map((note) => (note.id !== id ? note : returnedNote)));
+			})
+			.catch((error) => {
+				setErrorMessage(
+					`Note '${note.content}' was already removed from server`
+				);
+				setTimeout(() => {
+					setErrorMessage(null);
+				}, 5000);
+			});
 	};
 
 	const toggleImportanceOf = (id) => {
@@ -89,62 +126,68 @@ const App = () => {
 		noteService.setToken(null);
 	};
 
-	const loginForm = () => {
-		const hideWhenVisible = { display: loginVisible ? "none" : "" };
-		const showWhenVisible = { display: loginVisible ? "" : "none" };
-
-		return (
-			<div>
-				<div style={hideWhenVisible}>
-					<button onClick={() => setLoginVisible(true)}>log in</button>
-				</div>
-				<div style={showWhenVisible}>
-					<LoginForm
-						username={username}
-						password={password}
-						handleUsernameChange={({ target }) => setUsername(target.value)}
-						handlePasswordChange={({ target }) => setPassword(target.value)}
-						handleSubmit={handleLogin}
-					/>
-					<button onClick={() => setLoginVisible(false)}>cancel</button>
-				</div>
-			</div>
-		);
-	};
-
 	return (
-		<div>
-			<h1>Notes</h1>
-			<Notification message={errorMessage} />
-			{user === null ? (
-				loginForm()
-			) : (
-				<div>
-					<p>{user.name} logged-in</p>
-					<button type="button" onClick={handleLogout}>
-						Log out
-					</button>
-					<Togglable buttonLabel="new note">
-						<NoteForm createNote={addNote} />
-					</Togglable>
-				</div>
-			)}
-			<div>
-				<button onClick={() => setShowAll(!showAll)}>
-					show {showAll ? "important" : "all"}
-				</button>
-			</div>
-			<ul>
-				{notesToShow &&
-					notesToShow?.map((note) => (
-						<Note
-							key={note.id}
-							note={note}
-							toggleImportance={() => toggleImportanceOf(note.id)}
+		<div className="bg-[#ffffff] min-h-screen">
+			<div className="flex">
+				<main className="flex-1">
+					<Notification message={errorMessage} />
+					{user === null ? (
+						<LoginForm
+							username={username}
+							password={password}
+							handleUsernameChange={({ target }) => setUsername(target.value)}
+							handlePasswordChange={({ target }) => setPassword(target.value)}
+							handleSubmit={handleLogin}
 						/>
-					))}
-			</ul>
-			<Footer />
+					) : (
+						<div>
+							{/* Sidebar */}
+							<Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
+							<Navbar
+								user={user}
+								toggleSidebar={toggleSidebar}
+								handleLogout={handleLogout}
+							/>
+
+							{/* Main Content */}
+							<div
+								className={`flex flex-col items-center mx-auto transition-all duration-300 ${
+									isSidebarOpen ? "ml-64" : "ml-0"
+								}`}
+							>
+								<div className="flex relative w-1/2 transition-all duration-300">
+									{/* <Togglable buttonLabel="new note"> */}
+									<NoteForm createNote={addNote} />
+									{/* </Togglable> */}
+									<div className="mt-4">
+										<button
+											className="bg-[#38b6ff] text-white px-4 py-2 absolute right-0 bottom-0"
+											onClick={() => setShowAll(!showAll)}
+										>
+											show {showAll ? "important" : "all"}
+										</button>
+									</div>
+								</div>
+								<ul
+									className={"mt-6 space-y-2 w-1/2 transition-all duration-300"}
+								>
+									{notesToShow &&
+										notesToShow.map((note) => (
+											<Note
+												key={note.id}
+												note={note}
+												toggleImportance={() => toggleImportanceOf(note.id)}
+												deleteNote={() => deleteNote(note.id)}
+												updateNote={updateNote} // Pass the updateNote function
+											/>
+										))}
+								</ul>
+							</div>
+						</div>
+					)}
+				</main>
+			</div>
 		</div>
 	);
 };
